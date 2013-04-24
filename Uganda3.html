@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../data/css/bootstrap.min.css"/>
+<link rel="stylesheet" href="../data/css/style.css"/>
+<script type="text/javascript" src="../../d3.v2.js"></script>
+<script src="../data/d3.v3.min.js"></script>
+<script src="../data/topojson.v0.min.js"></script>
+<header>
+    <h1>Visualization Uganda</h1>
+
+    </header>
+    <div id="main" role="main">
+      <div id="vis"></div>
+  <div id="legend"></div>
+<style>
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+#states {
+  fill: #aaa;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+#states .active {
+  fill: steelblue;
+}
+
+</style>
+<body>
+<script>
+var createLegend,showLegend,hideLegend;
+var keys, legend, legendG, legendHeight, legendWidth;
+var width = 1000,
+    height = 600,
+    centered,
+    properties2;
+var color = d3.scale.category10();
+var projection2 = d3.geo.mercator().scale(35000).translate([-2800,420]),
+    path = d3.geo.path().projection(projection2);
+
+var svg = d3.select("body").append("svg")
+    
+
+
+svg.append("rect")
+    //.attr("class", "background")
+    //.attr("transform", "translate(" + 0 + "," + -300 + ")")
+    .on("click", click);
+
+var g = svg.append("g")
+  .append("g")
+    .attr("id", "states");
+
+d3.json("../data/Ug-districts.json", function(error, us) {
+       //console.log(us.objects);
+       var index=0;
+      topojson.object(us, us.objects.kc).geometries.forEach(function(z){index+1; z.id=index;});
+      g.selectAll("path")
+      .data(topojson.object(us, us.objects.kc).geometries)
+      .enter().append("path")
+      .attr("d", path)
+      .on("click", click);
+});
+
+function click(d) {
+  var x = 0,
+      y = 0,
+      k = 1;
+  var id;
+  console.log("hello");
+  console.log(d);
+  
+  id = d3.select(this).data();
+  //console.log(id[0].properties);
+
+  if (d && centered !== d) {
+    var centroid = path.centroid(d);
+    
+    x = -centroid[0]+50;
+    y = -centroid[1]+50;
+    k = 7;
+    centered = d;
+    
+    showLegend(id[0].properties);
+  } else {
+    hideLegend();
+    centered = null;
+  }
+
+  g.selectAll("path")
+      .classed("active", centered && function(d) { return d === centered; });
+
+  g.transition()
+      .duration(1000)
+      .attr("transform", "scale(" + k + ")translate(" + x + "," + y + ")")
+      .style("stroke-width", 1.5 / k + "px");
+  //createLegend(id[0].properties);
+  
+}
+showLegend = function(d) {
+  //console.log(d);
+  d3.select("#legend svg g.panel").select("text").transition().duration(500).text(d.ADM1+", "+d.ADM2+", "+d.ADM3);
+  return d3.select("#legend svg g.panel").transition().duration(500).attr("transform", "translate(0,0)").transition().duration(500);
+   };
+
+  hideLegend = function(d, i) {
+  return d3.select("#legend svg g.panel").transition().duration(500).attr("transform", "translate(165,0)");
+  };
+  
+  createLegend = function() {
+   
+  
+  legendWidth = 300;
+  legendHeight = 400;
+  legend = d3.select("#legend").append("svg").attr("width", legendWidth).attr("height", legendHeight);
+  legendG = legend.append("g").attr("transform", "translate(250,0)").attr("class", "panel");
+  legendG.append("rect").attr("width", legendWidth).attr("height", legendHeight).attr("rx", 4).attr("ry", 4).attr("fill-opacity", 0.5).attr("fill", "blue");
+  legendG.append("text").text('mbps hello').attr("font-family","sans-serif").attr("font-size","15px").attr("dx", "2").attr("dy", "50").attr("stroke","black");
+  
+  
+ 
+ 
+  };
+createLegend();
+</script>
